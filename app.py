@@ -1,40 +1,20 @@
 
-# =========================================================
-import os
+import gradio as gr
 import torch
 import soundfile as sf
-from IPython.display import Audio, display
-from google.colab import files
+import tempfile
 from parler_tts import ParlerTTSForConditionalGeneration
 from transformers import AutoTokenizer
-from huggingface_hub import notebook_login, hf_hub_download
-
-
-print("🔐 Please login with your Hugging Face READ token")
-notebook_login()
-
+import os
+from huggingface_hub import login
+login(token=os.getenv("HF_TOKEN"))
 
 MODEL_NAME = "ai4bharat/indic-parler-tts"
-
-try:
-    hf_hub_download(
-        repo_id=MODEL_NAME,
-        filename="config.json"
-    )
-    print("✅ Model access verified")
-except Exception as e:
-    print("❌ ACCESS ERROR")
-    print("Open this page:")
-    print("https://huggingface.co/ai4bharat/indic-parler-tts")
-    print("Then click 👉 Agree and access repository")
-    raise e
-
-
 device = "cuda" if torch.cuda.is_available() else "cpu"
+
 print("🚀 Using device:", device)
-
-
 print("⏳ Loading Kannada TTS model...")
+
 model = ParlerTTSForConditionalGeneration.from_pretrained(
     MODEL_NAME
 ).to(device)
@@ -48,11 +28,14 @@ description_tokenizer = AutoTokenizer.from_pretrained(
 print("✅ Model loaded successfully")
 
 
-def generate_kannada_tts(prompt_text, output_file="/content/kannada_output.wav"):
+# =========================================================
+# TTS FUNCTION
+# =========================================================
+def generate_kannada_tts(prompt_text):
     prompt_text = str(prompt_text).strip()
 
     if not prompt_text:
-        raise ValueError("❌ Kannada input cannot be empty")
+        return None
 
     description = (
         "A calm Kannada male speaker with natural pronunciation, "
@@ -78,25 +61,22 @@ def generate_kannada_tts(prompt_text, output_file="/content/kannada_output.wav")
 
     audio = generation.cpu().numpy().squeeze()
 
-    sf.write(
-        output_file,
-        audio,
-        model.config.sampling_rate
-    )
+    temp_wav = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+    sf.write(temp_wav.name, audio, model.config.sampling_rate)
 
-    print(f"✅ Audio saved → {output_file}")
-    display(Audio(output_file))
-
-    return output_file
+    return temp_wav.name
 
 
 
-user_text = input("Enter Kannada text: ")
+demo = gr.Interface(
+    fn=generate_kannada_tts,
+    inputs=gr.Textbox(
+        label="Enter Kannada Text",
+        placeholder="ನಮಸ್ಕಾರ, ನನ್ನ ಹೆಸರು ಅಥ್ಮಿಕ"
+    ),
+    outputs=gr.Audio(label="Generated Kannada Speech"),
+    title="Kannada Text To Speech using AI4Bharat",
+    description="Deep Learning based Kannada TTS model for project presentation"
+)
 
-#
-
-try:
-    output_path = generate_kannada_tts(user_text)
-except Exception as e:
-    print("❌ Error:", e)
-
+demo.launch()
