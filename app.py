@@ -1,11 +1,4 @@
-# =========================================================
-# 1) INSTALL DEPENDENCIES
-# =========================================================
-!pip -q install git+https://github.com/huggingface/parler-tts.git
-!pip -q install soundfile transformers accelerate sentencepiece huggingface_hub
 
-# =========================================================
-# 2) IMPORTS
 # =========================================================
 import os
 import torch
@@ -16,15 +9,11 @@ from parler_tts import ParlerTTSForConditionalGeneration
 from transformers import AutoTokenizer
 from huggingface_hub import notebook_login, hf_hub_download
 
-# =========================================================
-# 3) HUGGING FACE LOGIN
-# =========================================================
+
 print("🔐 Please login with your Hugging Face READ token")
 notebook_login()
 
-# =========================================================
-# 4) VERIFY MODEL ACCESS
-# =========================================================
+
 MODEL_NAME = "ai4bharat/indic-parler-tts"
 
 try:
@@ -40,15 +29,11 @@ except Exception as e:
     print("Then click 👉 Agree and access repository")
     raise e
 
-# =========================================================
-# 5) DEVICE
-# =========================================================
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print("🚀 Using device:", device)
 
-# =========================================================
-# 6) LOAD MODEL
-# =========================================================
+
 print("⏳ Loading Kannada TTS model...")
 model = ParlerTTSForConditionalGeneration.from_pretrained(
     MODEL_NAME
@@ -62,9 +47,7 @@ description_tokenizer = AutoTokenizer.from_pretrained(
 
 print("✅ Model loaded successfully")
 
-# =========================================================
-# 7) SAFE GENERATION FUNCTION
-# =========================================================
+
 def generate_kannada_tts(prompt_text, output_file="/content/kannada_output.wav"):
     prompt_text = str(prompt_text).strip()
 
@@ -106,21 +89,14 @@ def generate_kannada_tts(prompt_text, output_file="/content/kannada_output.wav")
 
     return output_file
 
-# =========================================================
-# 8) USER INPUT OUTSIDE FUNCTION
-# =========================================================
+
+
 user_text = input("Enter Kannada text: ")
 
-# Example:
-# ನಮಸ್ಕಾರ, ನನ್ನ ಹೆಸರು ಅಥ್ಮಿಕ
+#
 
 try:
     output_path = generate_kannada_tts(user_text)
 except Exception as e:
     print("❌ Error:", e)
 
-# =========================================================
-# 9) DOWNLOAD
-# =========================================================
-if os.path.exists("/content/kannada_output.wav"):
-    files.download("/content/kannada_output.wav")
